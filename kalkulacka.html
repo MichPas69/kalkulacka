@@ -29,10 +29,28 @@
   .cta{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
   .btn{background:var(--brand);border:none;color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;text-transform:uppercase;cursor:pointer}
   .btn.secondary{background:#444}
+
+  /* PRINT (PDF) STYLES */
+  @media print{
+    .note, .cta, .card input, .card select { display:none !important; }
+    .grid{grid-template-columns:1fr !important}
+    .wrap{max-width:900px}
+    h1{margin-bottom:0}
+    .print-header{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px 0}
+    .print-header .brand{font-weight:800;color:#D60000;font-size:18px}
+    .print-header .meta{color:#555;font-size:12px}
+    .kpi .box{background:#fff}
+    a{color:inherit;text-decoration:none}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="print-header" style="display:none">
+    <div class="brand">SPEKTRA INSTALL – porovnanie nákladov</div>
+    <div class="meta" id="printMeta"></div>
+  </div>
+
   <h1>🧮 Ročné náklady: plyn vs. tepelné čerpadlo</h1>
   <div class="note">Zadajte ročnú spotrebu plynu a ceny. Kalkulačka preráta plyn na kWh, vypočíta náklady a porovná ich s nákladmi na tepelné čerpadlo (SCOP). Výsledok je orientačný.</div>
 
@@ -106,6 +124,7 @@
 
       <div class="cta">
         <button class="btn" id="copyBtn">Kopírovať výsledok</button>
+        <button class="btn" id="pdfBtn"  style="background:#0B5;">Stiahnuť PDF</button>
         <button class="btn secondary" id="resetBtn">Reset</button>
       </div>
     </div>
@@ -117,11 +136,15 @@
   function eur(n){ return n.toLocaleString('sk-SK',{style:'currency',currency:'EUR'}); }
   function kwh(x){ return Math.round(x).toLocaleString('sk-SK') + ' kWh'; }
   function el(id){ return document.getElementById(id); }
+  function nowStr(){
+    var d=new Date();
+    return d.toLocaleDateString('sk-SK',{year:'numeric',month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'});
+  }
 
   function calc(){
     var gas_m3   = +el('gas_m3').value||0;
     var H        = +el('calorific').value||10.5;           // kWh/m3
-    var eff      = (+el('boiler_eff').value||90)/100;      // účinnosť (0-1)
+    var eff      = (+el('boiler_eff').value||90)/100;      // 0-1
     var gas_p    = +el('gas_price').value||0;              // €/m3
     var gas_fix  = +el('gas_fixed').value||0;              // €/mes
     var SCOP     = +el('scop').value||3.2;
@@ -130,18 +153,18 @@
     var invest   = +el('hp_invest').value||0;
 
     // Plyn -> kWh
-    var gas_energy_kWh = gas_m3 * H;               // energia v plyne (kWh)
-    var useful_heat    = gas_energy_kWh * eff;     // užitočné teplo do domu (kWh)
+    var gas_energy_kWh = gas_m3 * H;
+    var useful_heat    = gas_energy_kWh * eff;
 
     // Náklady plynu
-    var gas_energy_cost = gas_m3 * gas_p;          // variabilná zložka
-    var gas_fix_year    = gas_fix * 12;            // fix
+    var gas_energy_cost = gas_m3 * gas_p;
+    var gas_fix_year    = gas_fix * 12;
     var gas_total       = gas_energy_cost + gas_fix_year;
 
     // TČ
-    var hp_kwh = (SCOP>0) ? (useful_heat / SCOP) : 0; // elektrina v kWh
-    var hp_paid_kwh = hp_kwh * (1 - pv);               // časť nepokrytá FVE
-    var hp_total = hp_paid_kwh * el_p;                 // náklady (iba platená elektrina)
+    var hp_kwh = (SCOP>0) ? (useful_heat / SCOP) : 0;
+    var hp_paid_kwh = hp_kwh * (1 - pv);
+    var hp_total = hp_paid_kwh * el_p;
     var savings = Math.max(0, gas_total - hp_total);
 
     // Render KPIs
@@ -179,8 +202,14 @@
     } else {
       el('payback_wrap').style.display = 'none';
     }
+
+    // tlačový dátum
+    var meta = 'Vygenerované: ' + nowStr();
+    var ph = document.querySelector('.print-header');
+    if(ph){ ph.style.display='flex'; el('printMeta').textContent = meta; }
   }
 
+  // Handlery
   ['gas_m3','calorific','boiler_eff','gas_price','gas_fixed','scop','elec_price','pv','hp_invest'].forEach(function(id){
     var x = document.getElementById(id);
     x.addEventListener('input', calc);
@@ -196,6 +225,11 @@
     var pb = document.getElementById('payback_wrap').style.display!=='none' ? document.getElementById('payback').textContent : '';
     if(pb) lines.push('Odhad návratnosti: ' + pb);
     navigator.clipboard.writeText(lines.join('\n')).then(function(){ alert('Výsledok skopírovaný.'); });
+  });
+  document.getElementById('pdfBtn').addEventListener('click', function(){
+    // Prepočítať a otvoriť dialóg Tlačiť -> Uložiť ako PDF
+    calc();
+    window.print();
   });
   document.getElementById('resetBtn').addEventListener('click', function(){
     var def = {gas_m3:1500, calorific:10.5, boiler_eff:90, gas_price:0.75, gas_fixed:5, scop:3.2, elec_price:0.18, pv:20, hp_invest:0};
