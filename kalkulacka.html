@@ -40,7 +40,7 @@
 
 <script>
 (function(){
-  function eur(n){ return n.toLocaleString('sk-SK',{minimumFractionDigits:2, maximumFractionDigits:2}) + ' \\u20AC'; }
+  function eur(n){ return n.toLocaleString('sk-SK',{minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
   function calc(){
     var kwh = +document.getElementById('kwh').value||0;
     var price = +document.getElementById('price').value||0;
@@ -65,3 +65,4 @@
 </script>
 </body>
 </html>
+
