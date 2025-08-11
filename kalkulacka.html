@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<title>Kalkulačka úspory – Spektra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 0; padding: 0; }
+.container { max-width: 900px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+h1 { color: #D60000; }
+label { display: block; margin-top: 10px; font-weight: bold; }
+input, select { width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; }
+.result { background: #f3f3f3; padding: 12px; border-radius: 8px; margin-top: 15px; }
+strong { color: #D60000; font-size: 1.2em; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Rýchla kalkulačka úspory</h1>
+<p>Zadajte údaje a zistite, koľko môžete ušetriť s tepelným čerpadlom, kúrením a FVE.</p>
+
+<label>Ročná spotreba tepla (kWh)</label>
+<input id="kwh" type="number" value="12000">
+
+<label>Cena energie (€/kWh) s DPH 23%</label>
+<input id="price" type="number" value="0.16">
+
+<label>SCOP/COP tepelného čerpadla</label>
+<select id="scop">
+<option value="2.8">2.8</option>
+<option value="3.2" selected>3.2</option>
+<option value="3.6">3.6</option>
+<option value="4.0">4.0</option>
+</select>
+
+<label>Pokrytie FVE (%)</label>
+<input id="pv" type="number" value="20">
+
+<div class="result">
+Aktuálne náklady: <strong id="now">–</strong><br>
+Náklady s TČ + FVE: <strong id="with">–</strong><br>
+Ročná úspora: <strong id="save">–</strong>
+</div>
+</div>
+
+<script>
+const € = n => n.toLocaleString('sk-SK',{style:'currency',currency:'EUR'});
+function calc(){
+    const kwh = +document.getElementById('kwh').value||0;
+    const price = +document.getElementById('price').value||0;
+    const scop = +document.getElementById('scop').value||3.2;
+    const pv = Math.min(100,Math.max(0,+document.getElementById('pv').value||0))/100;
+
+    const now = kwh * price;
+    const tc_el = (kwh / scop) * price;
+    const tc_pv = tc_el * (1 - pv);
+    const save = Math.max(0, now - tc_pv);
+
+    document.getElementById('now').textContent = €(now);
+    document.getElementById('with').textContent = €(tc_pv);
+    document.getElementById('save').textContent = €(save);
+}
+['kwh','price','scop','pv'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', calc);
+    document.getElementById(id).addEventListener('change', calc);
+});
+calc();
+</script>
+</body>
+</html>
