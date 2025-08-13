@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Spektra – Plyn vs. Tepelné čerpadlo (ročné náklady)</title>
+<title>Kalkulačka – Plyn vs. Tepelné čerpadlo</title>
+
+<!-- Pekné systémové písmo, rýchle načítanie -->
 <style>
-  :root{ --brand:#D60000; --dark:#1F1F1F; --bg:#F6F7F9; }
+  :root{ --brand:#D60000; --dark:#111; --bg:#F6F7F9; }
   html,body{margin:0;padding:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:#fff;color:#111}
   .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
-  h1{font-size:clamp(22px,4vw,34px);margin:.2em 0 .5em;color:var(--dark)}
+  /* rámik celej kalkulačky */
+  .frame{background:#fff;border:1px solid #e6e6e6;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:20px}
+
   .grid{display:grid;grid-template-columns:1fr;gap:16px}
   @media(min-width:980px){ .grid{grid-template-columns:1fr 1fr} }
   .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px}
@@ -16,7 +20,6 @@
   label{display:block;font-weight:700;margin-top:10px}
   input[type="number"], select{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-top:4px}
   .muted{color:#666;font-size:13px}
-  .note{background:#fff3f3;border:1px solid #ffd6d6;color:#7a1414;padding:10px 12px;border-radius:10px;margin:10px 0}
   table{width:100%;border-collapse:collapse}
   th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
   tfoot td{font-weight:800}
@@ -30,103 +33,91 @@
   .btn{background:var(--brand);border:none;color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;text-transform:uppercase;cursor:pointer}
   .btn.secondary{background:#444}
 
-  /* PRINT (PDF) STYLES */
+  /* PRINT (PDF) STYLES – čistý výstup */
   @media print{
-    .note, .cta, .card input, .card select { display:none !important; }
+    .cta, .card input, .card select { display:none !important; }
     .grid{grid-template-columns:1fr !important}
     .wrap{max-width:900px}
-    h1{margin-bottom:0}
-    .print-header{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 10px 0}
-    .print-header .brand{font-weight:800;color:#D60000;font-size:18px}
-    .print-header .meta{color:#555;font-size:12px}
+    .frame{box-shadow:none;border:1px solid #ddd}
     .kpi .box{background:#fff}
     a{color:inherit;text-decoration:none}
   }
 </style>
+
+<!-- knižnice pre export PDF (priame stiahnutie) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="print-header" style="display:none">
-    
-  </div>
+  <div class="frame" id="exportArea">
+    <!-- bez nadpisu/logo – čisto kalkulačka -->
+    <div class="grid">
+      <div class="card">
+        <h2>1) Plyn – vstupy</h2>
+        <label>Ročná spotreba plynu (m³)</label>
+        <input id="gas_m3" type="number" min="0" step="1" value="1500">
+        <div class="muted">Bežný rodinný dom: ~1200–2000 m³/rok</div>
 
-  <h1>
-  Ročné náklady: plyn vs. tepelné čerpadlo
-</h1>
-  <div class="note">Zadajte ročnú spotrebu plynu a ceny. Kalkulačka preráta plyn na kWh, vypočíta náklady a porovná ich s nákladmi na tepelné čerpadlo (SCOP). Výsledok je orientačný.</div>
+        <label>Spodná výhrevnosť (kWh/m³)</label>
+        <input id="calorific" type="number" min="8" max="12" step="0.1" value="10.5">
+        <div class="muted">Typicky 10.2–10.8 kWh/m³</div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>1) Plyn – vstupy</h2>
-      <label>Ročná spotreba plynu (m³)</label>
-      <input id="gas_m3" type="number" min="0" step="1" value="1500">
-      <div class="muted">Bežný rodinný dom: ~1200–2000 m³/rok</div>
+        <label>Účinnosť kotla (%)</label>
+        <input id="boiler_eff" type="number" min="50" max="105" step="1" value="90">
+        <div class="muted">Kondenzačný kotol 88–98 %</div>
 
-      <label>Spodná výhrevnosť (kWh/m³)</label>
-      <input id="calorific" type="number" min="8" max="12" step="0.1" value="10.5">
-      <div class="muted">Typicky 10.2–10.8 kWh/m³</div>
+        <label>Cena plynu (€/m³)</label>
+        <input id="gas_price" type="number" min="0" step="0.01" value="0.75">
 
-      <label>Účinnosť kotla (%)</label>
-      <input id="boiler_eff" type="number" min="50" max="105" step="1" value="90">
-      <div class="muted">Kondenzačný kotol 88–98 %</div>
-
-      <label>Cena plynu (€/m³)</label>
-      <input id="gas_price" type="number" min="0" step="0.01" value="0.75">
-
-      <label>Fixný mesačný poplatok plynu (€/mes.)</label>
-      <input id="gas_fixed" type="number" min="0" step="0.01" value="5">
-    </div>
-
-    <div class="card">
-      <h2>2) Tepelné čerpadlo – vstupy</h2>
-      <label>SCOP/COP</label>
-      <select id="scop">
-        <option value="2.8">2.8</option>
-        <option value="3.2" selected>3.2</option>
-        <option value="3.6">3.6</option>
-        <option value="4.0">4.0</option>
-      </select>
-
-      <label>Cena elektriny (€/kWh)</label>
-      <input id="elec_price" type="number" min="0" step="0.001" value="0.18">
-
-      <label>Pokrytie FVE pre TČ (%)</label>
-      <input id="pv" type="number" min="0" max="100" step="5" value="20">
-      <div class="muted">Percento elektriny pre TČ pokryté fotovoltikou</div>
-
-      <label>Investícia do TČ (voliteľné, €)</label>
-      <input id="hp_invest" type="number" min="0" step="100" value="0">
-      <div class="muted">Ak vyplníte, zobrazí sa orientačná návratnosť</div>
-    </div>
-
-    <div class="card" style="grid-column:1/-1">
-      <h2>Výsledok</h2>
-      <div class="kpi">
-        <div class="box"><b>Plyn – energia</b><span id="gas_kwh">0 kWh</span></div>
-        <div class="box"><b>Užitočné teplo</b><span id="heat_kwh">0 kWh</span></div>
-        <div class="box"><b>TČ – el. spotreba</b><span id="hp_kwh">0 kWh</span></div>
+        <label>Fixný mesačný poplatok plynu (€/mes.)</label>
+        <input id="gas_fixed" type="number" min="0" step="0.01" value="5">
       </div>
 
-      <table style="margin-top:12px">
-        <tbody id="rows"></tbody>
-        <tfoot>
-          <tr><td><b>Ročné náklady plynu (spolu)</b></td><td class="right" id="gas_total">0 €</td></tr>
-          <tr><td><b>Ročné náklady TČ (spolu)</b></td><td class="right" id="hp_total">0 €</td></tr>
-          <tr><td class="total">Ročná úspora s TČ</td><td class="right total" id="savings">0 €</td></tr>
-        </tfoot>
-      </table>
+      <div class="card">
+        <h2>2) Tepelné čerpadlo – vstupy</h2>
+        <label>SCOP/COP</label>
+        <select id="scop">
+          <option value="2.8">2.8</option>
+          <option value="3.2" selected>3.2</option>
+          <option value="3.6">3.6</option>
+          <option value="4.0">4.0</option>
+        </select>
 
-      <div class="kpi" id="payback_wrap" style="display:none">
-        <div class="box" style="grid-column:1/-1">
-          <b>Odhad návratnosti investície</b>
-          <span id="payback">– rokov</span>
+        <label>Cena elektriny (€/kWh)</label>
+        <input id="elec_price" type="number" min="0" step="0.001" value="0.18">
+
+        <label>Pokrytie FVE pre TČ (%)</label>
+        <input id="pv" type="number" min="0" max="100" step="5" value="20">
+        <div class="muted">Percento elektriny pre TČ pokryté fotovoltikou</div>
+
+        <label>Investícia do TČ (voliteľné, €)</label>
+        <input id="hp_invest" type="number" min="0" step="100" value="0">
+        <div class="muted">Ak vyplníte, zobrazí sa orientačná návratnosť v PDF poznámke</div>
+      </div>
+
+      <div class="card" style="grid-column:1/-1">
+        <h2>Výsledok</h2>
+        <div class="kpi">
+          <div class="box"><b>Plyn – energia</b><span id="gas_kwh">0 kWh</span></div>
+          <div class="box"><b>Užitočné teplo</b><span id="heat_kwh">0 kWh</span></div>
+          <div class="box"><b>TČ – el. spotreba</b><span id="hp_kwh">0 kWh</span></div>
         </div>
-      </div>
 
-      <div class="cta">
-        <button class="btn" id="copyBtn">Kopírovať výsledok</button>
-        <button class="btn" id="pdfBtn"  style="background:#0B5;">Stiahnuť PDF</button>
-        <button class="btn secondary" id="resetBtn">Reset</button>
+        <table style="margin-top:12px">
+          <tbody id="rows"></tbody>
+          <tfoot>
+            <tr><td><b>Ročné náklady plynu (spolu)</b></td><td class="right" id="gas_total">0 €</td></tr>
+            <tr><td><b>Ročné náklady TČ (spolu)</b></td><td class="right" id="hp_total">0 €</td></tr>
+            <tr><td class="total">Ročná úspora s TČ</td><td class="right total" id="savings">0 €</td></tr>
+          </tfoot>
+        </table>
+
+        <div class="cta">
+          <button class="btn" id="copyBtn">Kopírovať výsledok</button>
+          <button class="btn" id="pdfBtn"  style="background:#0B5;">Stiahnuť PDF</button>
+          <button class="btn secondary" id="resetBtn">Reset</button>
+        </div>
       </div>
     </div>
   </div>
@@ -134,13 +125,21 @@
 
 <script>
 (function(){
+  /* ===== KONFIG – PDF kontakt a vodotlač ===== */
+  const COMPANY = {
+    name: "SPEKTRA INSTALL",
+    phone: "+421 900 000 000",
+    email: "spektrainstall@gmail.com",
+    web: "www.spektrainstall.sk",
+    address: "Rajec a okolie"
+  };
+  // Ak chceš vodotlač loga v PDF, vlož URL súboru (PNG/SVG). Ak ponecháš prázdne "", vodotlač sa nevloží.
+  const WATERMARK_URL = ""; // napr. "https://tvoja-domena.sk/logo.png"
+
+  /* ===== Výpočty ===== */
   function eur(n){ return n.toLocaleString('sk-SK',{style:'currency',currency:'EUR'}); }
   function kwh(x){ return Math.round(x).toLocaleString('sk-SK') + ' kWh'; }
   function el(id){ return document.getElementById(id); }
-  function nowStr(){
-    var d=new Date();
-    return d.toLocaleDateString('sk-SK',{year:'numeric',month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('sk-SK',{hour:'2-digit',minute:'2-digit'});
-  }
 
   function calc(){
     var gas_m3   = +el('gas_m3').value||0;
@@ -153,27 +152,24 @@
     var pv       = Math.min(100,Math.max(0,+el('pv').value||0))/100; // 0-1
     var invest   = +el('hp_invest').value||0;
 
-    // Plyn -> kWh
     var gas_energy_kWh = gas_m3 * H;
     var useful_heat    = gas_energy_kWh * eff;
 
-    // Náklady plynu
     var gas_energy_cost = gas_m3 * gas_p;
     var gas_fix_year    = gas_fix * 12;
     var gas_total       = gas_energy_cost + gas_fix_year;
 
-    // TČ
     var hp_kwh = (SCOP>0) ? (useful_heat / SCOP) : 0;
     var hp_paid_kwh = hp_kwh * (1 - pv);
     var hp_total = hp_paid_kwh * el_p;
     var savings = Math.max(0, gas_total - hp_total);
 
-    // Render KPIs
+    // KPIs
     el('gas_kwh').textContent  = kwh(gas_energy_kWh);
     el('heat_kwh').textContent = kwh(useful_heat);
     el('hp_kwh').textContent   = kwh(hp_kwh);
 
-    // Breakdown table
+    // Tabuľka
     var rows = [
       ['Plyn: spotreba', gas_m3.toLocaleString('sk-SK') + ' m³'],
       ['Plyn: energia', kwh(gas_energy_kWh)],
@@ -195,27 +191,30 @@
     el('hp_total').textContent  = eur(hp_total);
     el('savings').textContent   = eur(savings);
 
-    // Payback
-    if(invest>0 && savings>0){
-      var years = invest / savings;
-      el('payback').textContent = years.toFixed(1).replace('.', ',') + ' roka/rokov';
-      el('payback_wrap').style.display = 'grid';
-    } else {
-      el('payback_wrap').style.display = 'none';
-    }
-
-    // tlačový dátum
-    var meta = 'Vygenerované: ' + nowStr();
-    var ph = document.querySelector('.print-header');
-    if(ph){ ph.style.display='flex'; el('printMeta').textContent = meta; }
+    return { gas_total, hp_total, savings, invest };
   }
 
-  // Handlery
+  // Kopírovanie (funguje aj v ifrime – má fallback)
+  function copyTextSafely(text){
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly','');
+      ta.style.position='fixed'; ta.style.top='-1000px';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+      return Promise.resolve();
+    }
+  }
+
+  // Handlery vstupov
   ['gas_m3','calorific','boiler_eff','gas_price','gas_fixed','scop','elec_price','pv','hp_invest'].forEach(function(id){
     var x = document.getElementById(id);
     x.addEventListener('input', calc);
     x.addEventListener('change', calc);
   });
+
   document.getElementById('copyBtn').addEventListener('click', function(){
     var lines = [].slice.call(document.querySelectorAll('#rows tr')).map(function(tr){
       var t=tr.querySelectorAll('td'); return '- ' + t[0].textContent + ': ' + t[1].textContent;
@@ -223,15 +222,116 @@
     lines.push('Ročné náklady plynu: ' + document.getElementById('gas_total').textContent);
     lines.push('Ročné náklady TČ: ' + document.getElementById('hp_total').textContent);
     lines.push('Ročná úspora: ' + document.getElementById('savings').textContent);
-    var pb = document.getElementById('payback_wrap').style.display!=='none' ? document.getElementById('payback').textContent : '';
-    if(pb) lines.push('Odhad návratnosti: ' + pb);
-    navigator.clipboard.writeText(lines.join('\n')).then(function(){ alert('Výsledok skopírovaný.'); });
+    copyTextSafely(lines.join('\n')).then(function(){ alert('Výsledok skopírovaný.'); });
   });
-  document.getElementById('pdfBtn').addEventListener('click', function(){
-    // Prepočítať a otvoriť dialóg Tlačiť -> Uložiť ako PDF
-    calc();
-    window.print();
-  });
+
+  // ===== PDF EXPORT – priame stiahnutie, kontakt + voliteľná vodotlač =====
+  async function generatePDF(){
+    // Prepočet
+    const res = calc();
+
+    // Vyber plochu na export (celý rámik)
+    const target = document.getElementById('exportArea');
+
+    // počkaj na knižnice
+    if (!window.jspdf || !window.html2canvas) {
+      alert('Chýba knižnica pre export PDF. Obnovte stránku a skúste znova.');
+      return;
+    }
+
+    // Render do canvasu
+    const canvas = await html2canvas(target, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+
+    // Vytvor PDF (A4 na výšku)
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const contentW = pageW - margin*2;
+
+    // ak sa obsah nezmestí, rozsekaj po stranách
+    const imgW = contentW;
+    const imgH = canvas.height * (imgW / canvas.width);
+
+    if (imgH <= pageH - margin*2 - 24) {
+      pdf.addImage(imgData, 'PNG', margin, margin, imgW, imgH);
+    } else {
+      // viac strán
+      let sY = 0;
+      const pxPerMm = canvas.width / imgW;
+      const pagePixelHeight = (pageH - margin*2 - 24) * pxPerMm; // -24 mm rezerva na kontakt
+      while (sY < canvas.height) {
+        const sliceH = Math.min(pagePixelHeight, canvas.height - sY);
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceH;
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, sY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+        const pageImg = pageCanvas.toDataURL('image/png');
+        if (sY>0) pdf.addPage();
+        pdf.addImage(pageImg, 'PNG', margin, margin, imgW, (sliceH/pxPerMm));
+        sY += sliceH;
+      }
+    }
+
+    // Voliteľná vodotlač loga (ak zadaná URL)
+    if (WATERMARK_URL) {
+      try{
+        const wm = await loadImage(WATERMARK_URL);
+        pdf.setGState(new pdf.GState({opacity:0.08}));
+        const wmW = pageW * 0.7;
+        const wmH = wm.height * (wmW / wm.width);
+        const x = (pageW - wmW)/2, y = (pageH - wmH)/2;
+        // na všetkých stranách
+        const n = pdf.getNumberOfPages();
+        for(let i=1;i<=n;i++){
+          pdf.setPage(i);
+          pdf.addImage(wm, 'PNG', x, y, wmW, wmH, undefined, 'FAST');
+        }
+        pdf.setGState(new pdf.GState({opacity:1}));
+      }catch(e){ /* tichý fallback */ }
+    }
+
+    // Kontakt do päty každej strany
+    const contact = `${COMPANY.name} • ${COMPANY.phone} • ${COMPANY.email} • ${COMPANY.web}`;
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(9);
+    const pages = pdf.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      pdf.setPage(i);
+      pdf.setTextColor(120);
+      pdf.text(contact, margin, pageH - 6);
+      pdf.setTextColor(0);
+    }
+
+    // voliteľná poznámka o návratnosti
+    if(res.invest>0 && res.savings>0){
+      const years = (res.invest/res.savings).toFixed(1).replace('.', ',');
+      pdf.setPage(1);
+      pdf.setFontSize(10);
+      pdf.setTextColor(30);
+      pdf.text(`Odhad návratnosti investície: ${years} roka/rokov`, margin, pageH - 12);
+      pdf.setTextColor(0);
+    }
+
+    pdf.save('Spektra_kalkulacka.pdf');
+  }
+
+  function loadImage(url){
+    return new Promise((resolve,reject)=>{
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = ()=>resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  document.getElementById('pdfBtn').addEventListener('click', generatePDF);
+
   document.getElementById('resetBtn').addEventListener('click', function(){
     var def = {gas_m3:1500, calorific:10.5, boiler_eff:90, gas_price:0.75, gas_fixed:5, scop:3.2, elec_price:0.18, pv:20, hp_invest:0};
     Object.keys(def).forEach(function(k){
@@ -240,12 +340,9 @@
     calc();
   });
 
+  // prvý výpočet
   calc();
 })();
 </script>
 </body>
 </html>
-
-
-
-
