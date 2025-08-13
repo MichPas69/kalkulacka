@@ -138,7 +138,7 @@
     phone: "+421 917 572 221",
     email: "spektrainstall@gmail.com",
     web: "www.spektrainstall.sk",
-    address: "Hollého 210"
+    address: "Hollého 210, 015 01 Rajec"
   };
   const WATERMARK_URL = "https://michpas69.github.io/kalkulacka/1customcolor_logo_transparent_background.png";
 
@@ -199,14 +199,14 @@
     el('savings').textContent   = eur(savings);
 
     // PAYBACK v UI: (investícia - dotácia) / úspora
-    var netInvest = Math.max(0, invest - subsidy);
+   /* var netInvest = Math.max(0, invest - subsidy);
     var paybackTxt = '–';
     if (netInvest>0 && savings>0){
       var years = netInvest / savings;
       paybackTxt = years.toFixed(1).replace('.', ',') + ' roka/rokov';
     } else if (netInvest===0 && savings>0){
       paybackTxt = '0 (dotácia pokrýva investíciu)';
-    }
+    }*/
     el('payback_ui').textContent = paybackTxt;
 
     return { gas_total, hp_total, savings, invest, subsidy, netInvest, paybackTxt };
@@ -334,5 +334,6 @@
 </script>
 </body>
 </html>
+
 
 
