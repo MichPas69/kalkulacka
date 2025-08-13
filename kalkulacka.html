@@ -291,11 +291,11 @@
       }
 
       // pridaj aj návratnosť (text) na 1. stranu
-     /* pdf.setPage(1);
+      pdf.setPage(1);
       pdf.setFontSize(10);
       pdf.setTextColor(30);
-      pdf.text(`Odhad návratnosti investície: ${data.paybackTxt}`, margin, pageH - 12);
-      pdf.setTextColor(0);*/
+      //pdf.text(`Odhad návratnosti investície: ${data.paybackTxt}`, margin, pageH - 12);
+      pdf.setTextColor(0);
 
       pdf.save('Spektra_kalkulacka.pdf');
     } finally {
@@ -334,6 +334,7 @@
 </script>
 </body>
 </html>
+
 
 
 
