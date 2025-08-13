@@ -199,14 +199,14 @@
     el('savings').textContent   = eur(savings);
 
     // PAYBACK v UI: (investícia - dotácia) / úspora
-   /* var netInvest = Math.max(0, invest - subsidy);
+    var netInvest = Math.max(0, invest - subsidy);
     var paybackTxt = '–';
     if (netInvest>0 && savings>0){
       var years = netInvest / savings;
       paybackTxt = years.toFixed(1).replace('.', ',') + ' roka/rokov';
     } else if (netInvest===0 && savings>0){
       paybackTxt = '0 (dotácia pokrýva investíciu)';
-    }*/
+    }
     el('payback_ui').textContent = paybackTxt;
 
     return { gas_total, hp_total, savings, invest, subsidy, netInvest, paybackTxt };
@@ -291,11 +291,11 @@
       }
 
       // pridaj aj návratnosť (text) na 1. stranu
-      pdf.setPage(1);
+     /* pdf.setPage(1);
       pdf.setFontSize(10);
       pdf.setTextColor(30);
       pdf.text(`Odhad návratnosti investície: ${data.paybackTxt}`, margin, pageH - 12);
-      pdf.setTextColor(0);
+      pdf.setTextColor(0);*/
 
       pdf.save('Spektra_kalkulacka.pdf');
     } finally {
@@ -334,6 +334,7 @@
 </script>
 </body>
 </html>
+
 
 
 
