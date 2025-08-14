@@ -43,12 +43,12 @@
 </style>
 
 <!-- knižnice pre priamy export do PDF -->
-  <link href="https://fonts.googleapis.com/css2?family=DejaVu+Sans&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body>
 <div class="wrap">
+  <h2>Koľko ušetrím s tepelným čerpadlom v porovnaní s plynovým kotlom ?</h2>
   <div class="frame" id="exportArea">
     <div class="grid">
       <!-- PLYN -->
@@ -293,12 +293,9 @@ if (window.sendSpektraHeight) window.sendSpektraHeight();
 
       // pridaj aj návratnosť (text) na 1. stranu
       pdf.setPage(1);
-      pdf.addFileToVFS("DejaVuSans.ttf", dejavuBase64);
-      pdf.addFont("DejaVuSans.ttf", "dejavu", "normal");
-      pdf.setFont("dejavu");
       pdf.setFontSize(10);
       pdf.setTextColor(30);
-      pdf.text(`Výpočet úspory s tepelným čerpadlom oproti plynovému kotlu.`, margin, pageH - 12);
+     // pdf.text(`Odhad úspory s  oproti plynovému kotlu.`, margin, pageH - 12);
       pdf.setTextColor(0);
 
       pdf.save('Spektra_kalkulacka.pdf');
@@ -368,6 +365,7 @@ if (window.sendSpektraHeight) window.sendSpektraHeight();
 </script>
 </body>
 </html>
+
 
 
 
